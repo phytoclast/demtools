@@ -67,12 +67,13 @@ hillpos <- function(xmax, xmin, xmed){#relative slope position
 
 
 dem <- rast('dem.tif')
-
-
+# dm <- rast('D:/GIS/gsmnp/US_DEM/us_dem/w001001.adf')
+#get smaller extent
 extnt <- c(xmin= -250000, xmax=000000, ymin=200000, ymax=500000)#lmich
 # extnt <- c(xmin= 100000, xmax=300000, ymin=50000, ymax=200000)#nohio
 dm <- terra::crop(dem, extnt)
-plot(dm)
+
+#focal analysis of two different neighborhood radius
 
 xmax = focalmax(dm, 500)
 
@@ -90,21 +91,24 @@ x.slope <-  tan(terrain(dm, v="slope", unit='radians'))*100
 
 x.slope.med <- focalmed(x.slope, 500)
 
-
+#local slope position
 x.pos <- hillpos(xmax,xmin,x.med)
+#mesoscale slope position
 x.pos2 <- hillpos(xmax2,xmin2,x.med2)
 
 rel <- xmax-xmin
 rel2 <- xmax2-xmin2
 
+#create hillshade 
 xslope <- terrain(dm, v='slope', unit='radians')
 xaspect <- terrain(dm, v='aspect', unit='radians')
 x.shade <- shade(xslope, xaspect)
 
+# #previous analysis keying geomorphic positions: 1.rise, 2.talf, 3.dip, 4.interfluve, 5.crest, 6.toeslope, 7.tread, 8.riser, 9.shoulder, 10.backslope, 11.footslope.
 # plot(x.slope.med>1)
 # 
 # geomorph.flats <- ifel(
-#   x.slope.med < 1 & x.slope.med < 2, 
+#   x.slope.med < 1 & x.slope < 2, 
 #   ifel(dm - x.med > 0.5, 1,ifel(dm - x.med > -0.5,2,3)),
 #   NA
 # )
@@ -128,30 +132,29 @@ x.shade <- shade(xslope, xaspect)
 # writeRaster(geomorph, 'geomorph.tif', overwrite=T)
 # writeRaster(x.shade, 'x.shade.tif', overwrite=T)
 
-##########alt
+##########alternative geomorphic analysis
+#relative position giving more weight to local position where the contrast in mesoscale position is highest.
+x.pos.r <- focalmax(x.pos2, 500) - focalmin(x.pos2, 500)
 x.pos4 <- x.pos*x.pos.r + x.pos2*(x.pos.r*-1+1)
+x.pos.class <- ifel(x.pos4 >= 0.67, 3,ifel(x.pos4 >= 0.33, 2,1))
+
+#relative slope areas, wherein between a slope of 2 to 10 percent the status as sloping or not is relative to its neighborhood
 x.rslope <- ifel((x.slope > x.slope.med & x.slope >= 2) | x.slope >= 10, 1,0)
 
-# writeRaster(x.pos4, 'x.pos4.tif', overwrite=T)
-# x.pos3 <- ifel(x.pos2 >= 0.67 | x.pos >= 0.67, 3, ifel(x.pos2 < 0.33 | x.pos < 0.33,1,2))
-
+#slope landscape, whether most of the area is flat, intermediate, or hilly
 x.slope.med.class <- ifel(
   x.slope.med < 0.5 & x.slope < 2,1, ifel(x.slope.med < 2 & x.slope < 10, 2,3))
 
-x.pos.class <- ifel(x.pos4 >= 0.67, 3,ifel(x.pos4 >= 0.33, 2,1))
-
 geomorph <- x.pos.class + x.rslope*10 + x.slope.med.class*100
 
-plot(geomorph)
-writeRaster(geomorph, 'geomorph2.tif', overwrite=T)
-writeRaster(x.shade, 'x.shade2.tif', overwrite=T)
+writeRaster(geomorph, 'geomorph3.tif', overwrite=T)
+writeRaster(x.shade, 'x.shade3.tif', overwrite=T)
 
-
-x.pos.r <- focalmax(x.pos2, 500) - focalmin(x.pos2, 500)
-
-# writeRaster(x.pos.r, 'x.pos.r.tif')
-
-
-
-writeRaster(x.pos, 'x.pos.tif', overwrite=T)
-writeRaster(x.pos2, 'x.pos2.tif', overwrite=T)
+classnumbers = c(101,102,103,201,202,203,211,212,213,301,302,303,311,312,313)
+classnames = c('dip','flat','rise',
+               'valley', 'plain terrace', 'interfluve',
+               'riserfoot', 'riserback', 'risershoulder',
+               'toeslope', 'hill terrace', 'summit',
+               'footslope', 'backslope', 'shoulder'
+               )
+geomorphclasses <- data.frame(class=classnumbers,name= classnames)
