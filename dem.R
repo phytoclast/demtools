@@ -76,7 +76,7 @@ comphillpos = function(max1,max2,max3,min1,min2,min3,med1,med2,med3){
   x.pos <- x.pos.1*x.pos.r2 + x.pos3*(x.pos.r2*-1+1)
   return(x.pos)
 }
-meanhillpos = function(max1,max2,max3,min1,min2,min3,med1,med2,med3){
+tpi = function(max1,max2,max3,min1,min2,min3,med1,med2,med3){
   x.pos1 <- hillpos(max1,min1,med1)
   x.pos2 <- hillpos(max2,min2,med2)
   x.pos3 <- hillpos(max3,min3,med3)
