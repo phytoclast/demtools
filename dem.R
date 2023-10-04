@@ -56,13 +56,33 @@ focalmed <- function(x, r){
   }
   return(x1.mean)} 
 
+
 hillpos <- function(xmax, xmin, xmed){#relative slope position
-  x.pos <- (dm - xmed)/(xmax - xmed)
-  x.neg <- (dm - xmed)/(xmed - xmin)
+  x.pos <- (dm - xmed)/(xmax - xmed+0.5)
+  x.neg <- (dm - xmed)/(xmed - xmin+0.5)
   x.pos <- ifel(x.pos > 0, x.pos,0)
   x.neg <- ifel(x.neg < 0, x.neg,0)
   p <- ((x.pos+x.neg)+1)/2
   return(p)
+}
+#compound slope position
+comphillpos = function(max1,max2,max3,min1,min2,min3,med1,med2,med3){
+  x.pos1 <- hillpos(max1,min1,med1)
+  x.pos2 <- hillpos(max2,min2,med2)
+  x.pos3 <- hillpos(max3,min3,med3)
+  x.pos.r1 <- focalmax(x.pos2, 100) - focalmin(x.pos2, 100)
+  x.pos.1 <- x.pos1*x.pos.r1 + x.pos2*(x.pos.r1*-1+1)
+  x.pos.r2 <- focalmax(x.pos3, 500) - focalmin(x.pos3, 500)
+  x.pos <- x.pos.1*x.pos.r2 + x.pos3*(x.pos.r2*-1+1)
+  return(x.pos)
+}
+meanhillpos = function(max1,max2,max3,min1,min2,min3,med1,med2,med3){
+  x.pos1 <- hillpos(max1,min1,med1)
+  x.pos2 <- hillpos(max2,min2,med2)
+  x.pos3 <- hillpos(max3,min3,med3)
+  
+  x.pos <- (x.pos1+x.pos2+x.pos3)/3
+  return(x.pos)
 }
 
 
